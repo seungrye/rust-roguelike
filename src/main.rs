@@ -1,10 +1,10 @@
 use rltk::{GameState, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 use specs_derive::Component;
-use std::{
-    cmp::{max, min},
-    process::id,
-};
+use std::cmp::{max, min};
+
+mod map;
+pub use map::*;
 
 struct State {
     ecs: World,
@@ -65,11 +65,6 @@ impl<'a> System<'a> for LeftMover {
 #[derive(Component, Debug)]
 struct Player {}
 
-#[derive(PartialEq, Clone, Copy)]
-enum TileType {
-    Wall,
-    Floor,
-}
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
@@ -112,36 +107,6 @@ fn main() -> rltk::BError {
     rltk::main_loop(context, gs)
 }
 
-fn xy_idx(x: i32, y: i32) -> usize {
-    (y as usize * 80) + x as usize
-}
-
-fn new_map() -> Vec<TileType> {
-    let mut map = vec![TileType::Floor; 80 * 50];
-
-    // make the boundaries walls
-    for x in 0..80 {
-        map[xy_idx(x, 0)] = TileType::Wall;
-        map[xy_idx(x, 49)] = TileType::Wall;
-    }
-    for y in 0..50 {
-        map[xy_idx(0, y)] = TileType::Wall;
-        map[xy_idx(79, y)] = TileType::Wall;
-    }
-
-    let mut rng = rltk::RandomNumberGenerator::new();
-
-    for _ in 0..400 {
-        let x = rng.roll_dice(1, 79);
-        let y = rng.roll_dice(1, 49);
-        let idx = xy_idx(x, y);
-        if idx != xy_idx(40, 25) {
-            map[idx] = TileType::Wall;
-        }
-    }
-
-    map
-}
 
 fn draw_map(map: &Vec<TileType>, ctx: &mut Rltk) {
     let mut x = 0;
