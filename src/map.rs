@@ -1,8 +1,21 @@
+use super::Rect;
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum TileType {
     Wall,
     Floor,
+}
+
+pub fn new_map_rooms_and_corridors() -> Vec<TileType> {
+    let mut map = vec![TileType::Floor; 80 * 50];
+
+    let room1 = Rect::new(20, 15, 10, 15);
+    let room2 = Rect::new(35, 15, 10, 15);
+
+    apply_room_to_map(&room1, &mut map);
+    apply_room_to_map(&room2, &mut map);
+
+    map
 }
 
 pub fn xy_idx(x: i32, y: i32) -> usize {

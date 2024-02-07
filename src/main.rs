@@ -1,3 +1,4 @@
+/// https://bfnightly.bracketproductions.com/chapter_4.html#making-a-couple-of-rectangular-rooms 작업중
 use rltk::{GameState, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 use specs_derive::Component;
@@ -5,6 +6,9 @@ use std::cmp::{max, min};
 
 mod map;
 pub use map::*;
+
+mod rect;
+pub use rect::*;
 
 struct State {
     ecs: World,
@@ -65,7 +69,6 @@ impl<'a> System<'a> for LeftMover {
 #[derive(Component, Debug)]
 struct Player {}
 
-
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::simple80x50()
@@ -106,7 +109,6 @@ fn main() -> rltk::BError {
 
     rltk::main_loop(context, gs)
 }
-
 
 fn draw_map(map: &Vec<TileType>, ctx: &mut Rltk) {
     let mut x = 0;
