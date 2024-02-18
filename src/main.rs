@@ -15,8 +15,8 @@ struct State {
 }
 impl State {
     fn run_systems(&mut self) {
-        let mut lw = LeftMover {};
-        lw.run_now(&self.ecs);
+        // let mut lw = LeftMover {};
+        // lw.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -51,20 +51,20 @@ struct Renderable {
     bg: RGB,
 }
 
-#[derive(Component)]
-struct LeftMover {}
-impl<'a> System<'a> for LeftMover {
-    type SystemData = (ReadStorage<'a, LeftMover>, WriteStorage<'a, Position>);
+// #[derive(Component)]
+// struct LeftMover {}
+// impl<'a> System<'a> for LeftMover {
+//     type SystemData = (ReadStorage<'a, LeftMover>, WriteStorage<'a, Position>);
 
-    fn run(&mut self, (lefty, mut pos): Self::SystemData) {
-        for (_lefty, pos) in (&lefty, &mut pos).join() {
-            pos.x -= 1;
-            if pos.x < 0 {
-                pos.x = 79
-            }
-        }
-    }
-}
+//     fn run(&mut self, (lefty, mut pos): Self::SystemData) {
+//         for (_lefty, pos) in (&lefty, &mut pos).join() {
+//             pos.x -= 1;
+//             if pos.x < 0 {
+//                 pos.x = 79
+//             }
+//         }
+//     }
+// }
 
 #[derive(Component, Debug)]
 struct Player {}
@@ -78,12 +78,19 @@ fn main() -> rltk::BError {
     let mut gs = State { ecs: World::new() };
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
-    gs.ecs.register::<LeftMover>();
+    // gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
+
+    let (rooms, map) = new_map_rooms_and_corridors();
+    gs.ecs.insert(map);
+    let (player_x, player_y) = rooms[0].center();
 
     gs.ecs
         .create_entity()
-        .with(Position { x: 40, y: 25 })
+        .with(Position {
+            x: player_x,
+            y: player_y,
+        })
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
@@ -101,11 +108,9 @@ fn main() -> rltk::BError {
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::BLACK),
             })
-            .with(LeftMover {})
+            // .with(LeftMover {})
             .build();
     }
-
-    gs.ecs.insert(new_map());
 
     rltk::main_loop(context, gs)
 }
@@ -149,10 +154,18 @@ fn player_input(gs: &mut State, ctx: &mut Rltk) {
     match ctx.key {
         None => {}
         Some(key) => match key {
-            VirtualKeyCode::Left => try_move_player(-1, 0, &mut gs.ecs),
-            VirtualKeyCode::Right => try_move_player(1, 0, &mut gs.ecs),
-            VirtualKeyCode::Up => try_move_player(0, -1, &mut gs.ecs),
-            VirtualKeyCode::Down => try_move_player(0, 1, &mut gs.ecs),
+            VirtualKeyCode::Left | VirtualKeyCode::Numpad4 | VirtualKeyCode::H => {
+                try_move_player(-1, 0, &mut gs.ecs)
+            }
+            VirtualKeyCode::Right | VirtualKeyCode::Numpad6 | VirtualKeyCode::L => {
+                try_move_player(1, 0, &mut gs.ecs)
+            }
+            VirtualKeyCode::Up | VirtualKeyCode::Numpad8 | VirtualKeyCode::K => {
+                try_move_player(0, -1, &mut gs.ecs)
+            }
+            VirtualKeyCode::Down | VirtualKeyCode::Numpad2 | VirtualKeyCode::J => {
+                try_move_player(0, 1, &mut gs.ecs)
+            }
             _ => {}
         },
     }
