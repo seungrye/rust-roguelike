@@ -27,7 +27,7 @@ impl GameState for State {
         player_input(self, ctx);
 
         // `fetch` requires that you promise that you know that the resource you are requesting really does exist - and will crash if it doesn't
-        let map = self.ecs.fetch::<Vec<TileType>>();
+        let map = self.ecs.fetch::<Map>();
         draw_map(&map, ctx);
 
         let positions = self.ecs.read_storage::<Position>();
@@ -78,12 +78,11 @@ fn main() -> rltk::BError {
     let mut gs = State { ecs: World::new() };
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
-    // gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
 
-    let (rooms, map) = new_map_rooms_and_corridors();
+    let map = Map::new_map_rooms_and_corridors();
+    let (player_x, player_y) = map.rooms[0].center();
     gs.ecs.insert(map);
-    let (player_x, player_y) = rooms[0].center();
 
     gs.ecs
         .create_entity()
@@ -98,19 +97,6 @@ fn main() -> rltk::BError {
         })
         .with(Player {})
         .build();
-
-    for i in 0..10 {
-        gs.ecs
-            .create_entity()
-            .with(Position { x: i * 7, y: 20 })
-            .with(Renderable {
-                glyph: rltk::to_cp437('☺'),
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-            })
-            // .with(LeftMover {})
-            .build();
-    }
 
     rltk::main_loop(context, gs)
 }
@@ -174,12 +160,12 @@ fn player_input(gs: &mut State, ctx: &mut Rltk) {
 fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
     let mut player = ecs.write_storage::<Player>();
-    let map = ecs.fetch::<Vec<TileType>>();
+    let map = ecs.fetch::<Map>();
 
     // 만약 Position과 Player를 모두 가진 엔티티가 있다면, for 구문을 실행합니다.
     for (_player, pos) in (&mut player, &mut positions).join() {
-        let destination_idx = xy_idx(pos.x + delta_x, pos.y + delta_y);
-        if map[destination_idx] != TileType::Wall {
+        let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
+        if map.tiles[destination_idx] != TileType::Wall {
             pos.x = min(79, max(0, pos.x + delta_x));
             pos.y = min(49, max(0, pos.y + delta_y));
         }
