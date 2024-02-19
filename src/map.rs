@@ -15,6 +15,7 @@ pub struct Map {
     pub rooms: Vec<Rect>,
     pub width: i32,
     pub height: i32,
+    pub revealed_tiles: Vec<bool>,
 }
 
 impl Map {
@@ -46,6 +47,7 @@ impl Map {
             height: 50,
             tiles: vec![TileType::Wall; 80 * 50],
             rooms: Vec::new(),
+            revealed_tiles: vec![false; 80 * 50],
         };
 
         const MAX_ROOMS: i32 = 30;

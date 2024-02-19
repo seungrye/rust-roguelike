@@ -57,7 +57,7 @@ struct Renderable {
 }
 
 #[derive(Component, Debug)]
-struct Player {}
+pub struct Player {}
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
@@ -97,46 +97,41 @@ fn main() -> rltk::BError {
 }
 
 fn draw_map(ecs: &World, ctx: &mut Rltk) {
-    let viewsheds = ecs.write_storage::<Viewshed>();
-    let players = ecs.write_storage::<Player>();
     let map = ecs.fetch::<Map>();
 
-    for (_, viewshed) in (&players, &viewsheds).join() {
-        let mut x = 0;
-        let mut y = 0;
+    let mut x = 0;
+    let mut y = 0;
 
-        for tile in map.tiles.iter() {
-            // render a tile depending upon the tile type
-            let pt = rltk::Point::new(x, y);
-            if viewshed.visible_tiles.contains(&pt) {
-                match tile {
-                    TileType::Floor => {
-                        ctx.set(
-                            x,
-                            y,
-                            RGB::from_f32(0.5, 0.5, 0.5),
-                            RGB::from_f32(0., 0., 0.),
-                            rltk::to_cp437('.'),
-                        );
-                    }
-                    TileType::Wall => {
-                        ctx.set(
-                            x,
-                            y,
-                            RGB::from_f32(0., 1.0, 0.),
-                            RGB::from_f32(0., 0., 0.),
-                            rltk::to_cp437('#'),
-                        );
-                    }
+    for (idx, tile) in map.tiles.iter().enumerate() {
+        // render a tile depending upon the tile type
+        if map.revealed_tiles[idx] {
+            match tile {
+                TileType::Floor => {
+                    ctx.set(
+                        x,
+                        y,
+                        RGB::from_f32(0.5, 0.5, 0.5),
+                        RGB::from_f32(0., 0., 0.),
+                        rltk::to_cp437('.'),
+                    );
+                }
+                TileType::Wall => {
+                    ctx.set(
+                        x,
+                        y,
+                        RGB::from_f32(0., 1.0, 0.),
+                        RGB::from_f32(0., 0., 0.),
+                        rltk::to_cp437('#'),
+                    );
                 }
             }
+        }
 
-            // move to cordinates
-            x += 1;
-            if x > 79 {
-                x = 0;
-                y += 1;
-            }
+        // move to cordinates
+        x += 1;
+        if x > 79 {
+            x = 0;
+            y += 1;
         }
     }
 }
