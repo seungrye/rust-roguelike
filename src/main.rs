@@ -10,13 +10,19 @@ pub use map::*;
 mod rect;
 pub use rect::*;
 
+mod components;
+pub use components::*;
+
+mod visibility_system;
+pub use visibility_system::VisibilitySystem;
+
 struct State {
     ecs: World,
 }
 impl State {
     fn run_systems(&mut self) {
-        // let mut lw = LeftMover {};
-        // lw.run_now(&self.ecs);
+        let mut vis = VisibilitySystem {};
+        vis.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -27,8 +33,7 @@ impl GameState for State {
         player_input(self, ctx);
 
         // `fetch` requires that you promise that you know that the resource you are requesting really does exist - and will crash if it doesn't
-        let map = self.ecs.fetch::<Map>();
-        draw_map(&map, ctx);
+        draw_map(&self.ecs, ctx);
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
@@ -39,7 +44,7 @@ impl GameState for State {
 }
 
 #[derive(Component)]
-struct Position {
+pub struct Position {
     x: i32,
     y: i32,
 }
@@ -50,21 +55,6 @@ struct Renderable {
     fg: RGB,
     bg: RGB,
 }
-
-// #[derive(Component)]
-// struct LeftMover {}
-// impl<'a> System<'a> for LeftMover {
-//     type SystemData = (ReadStorage<'a, LeftMover>, WriteStorage<'a, Position>);
-
-//     fn run(&mut self, (lefty, mut pos): Self::SystemData) {
-//         for (_lefty, pos) in (&lefty, &mut pos).join() {
-//             pos.x -= 1;
-//             if pos.x < 0 {
-//                 pos.x = 79
-//             }
-//         }
-//     }
-// }
 
 #[derive(Component, Debug)]
 struct Player {}
@@ -79,6 +69,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
+    gs.ecs.register::<Viewshed>();
 
     let map = Map::new_map_rooms_and_corridors();
     let (player_x, player_y) = map.rooms[0].center();
@@ -96,42 +87,56 @@ fn main() -> rltk::BError {
             bg: RGB::named(rltk::BLACK),
         })
         .with(Player {})
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: 8,
+        })
         .build();
 
     rltk::main_loop(context, gs)
 }
 
-fn draw_map(map: &Map, ctx: &mut Rltk) {
-    let mut x = 0;
-    let mut y = 0;
-    for tile in map.tiles.iter() {
-        // render a tile depending upon the tile type
-        match tile {
-            TileType::Floor => {
-                ctx.set(
-                    x,
-                    y,
-                    RGB::from_f32(0.5, 0.5, 0.5),
-                    RGB::from_f32(0., 0., 0.),
-                    rltk::to_cp437('.'),
-                );
-            }
-            TileType::Wall => {
-                ctx.set(
-                    x,
-                    y,
-                    RGB::from_f32(0., 1.0, 0.),
-                    RGB::from_f32(0., 0., 0.),
-                    rltk::to_cp437('#'),
-                );
-            }
-        }
+fn draw_map(ecs: &World, ctx: &mut Rltk) {
+    let viewsheds = ecs.write_storage::<Viewshed>();
+    let players = ecs.write_storage::<Player>();
+    let map = ecs.fetch::<Map>();
 
-        // move to cordinates
-        x += 1;
-        if x > 79 {
-            x = 0;
-            y += 1;
+    for (_, viewshed) in (&players, &viewsheds).join() {
+        let mut x = 0;
+        let mut y = 0;
+
+        for tile in map.tiles.iter() {
+            // render a tile depending upon the tile type
+            let pt = rltk::Point::new(x, y);
+            if viewshed.visible_tiles.contains(&pt) {
+                match tile {
+                    TileType::Floor => {
+                        ctx.set(
+                            x,
+                            y,
+                            RGB::from_f32(0.5, 0.5, 0.5),
+                            RGB::from_f32(0., 0., 0.),
+                            rltk::to_cp437('.'),
+                        );
+                    }
+                    TileType::Wall => {
+                        ctx.set(
+                            x,
+                            y,
+                            RGB::from_f32(0., 1.0, 0.),
+                            RGB::from_f32(0., 0., 0.),
+                            rltk::to_cp437('#'),
+                        );
+                    }
+                }
+            }
+
+            // move to cordinates
+            x += 1;
+            if x > 79 {
+                x = 0;
+                y += 1;
+            }
         }
     }
 }

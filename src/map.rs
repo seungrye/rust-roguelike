@@ -1,6 +1,6 @@
 use std::cmp;
 
-use rltk::RandomNumberGenerator;
+use rltk::{Algorithm2D, BaseMap, RandomNumberGenerator};
 
 use super::Rect;
 
@@ -94,5 +94,17 @@ impl Map {
                 self.tiles[idx] = TileType::Floor;
             }
         }
+    }
+}
+
+impl Algorithm2D for Map {
+    fn dimensions(&self) -> rltk::prelude::Point {
+        rltk::prelude::Point::new(self.width, self.height)
+    }
+}
+
+impl BaseMap for Map {
+    fn is_opaque(&self, _idx: usize) -> bool {
+        self.tiles[_idx] == TileType::Wall
     }
 }
