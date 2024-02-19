@@ -101,10 +101,10 @@ fn main() -> rltk::BError {
     rltk::main_loop(context, gs)
 }
 
-fn draw_map(map: &Vec<TileType>, ctx: &mut Rltk) {
+fn draw_map(map: &Map, ctx: &mut Rltk) {
     let mut x = 0;
     let mut y = 0;
-    for tile in map.iter() {
+    for tile in map.tiles.iter() {
         // render a tile depending upon the tile type
         match tile {
             TileType::Floor => {
