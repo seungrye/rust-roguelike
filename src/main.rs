@@ -90,6 +90,7 @@ fn main() -> rltk::BError {
         .with(Viewshed {
             visible_tiles: Vec::new(),
             range: 8,
+            dirty: true,
         })
         .build();
 
@@ -105,26 +106,15 @@ fn draw_map(ecs: &World, ctx: &mut Rltk) {
     for (idx, tile) in map.tiles.iter().enumerate() {
         // render a tile depending upon the tile type
         if map.revealed_tiles[idx] {
-            match tile {
-                TileType::Floor => {
-                    ctx.set(
-                        x,
-                        y,
-                        RGB::from_f32(0.5, 0.5, 0.5),
-                        RGB::from_f32(0., 0., 0.),
-                        rltk::to_cp437('.'),
-                    );
-                }
-                TileType::Wall => {
-                    ctx.set(
-                        x,
-                        y,
-                        RGB::from_f32(0., 1.0, 0.),
-                        RGB::from_f32(0., 0., 0.),
-                        rltk::to_cp437('#'),
-                    );
-                }
+            let (glyph, mut fg) = match tile {
+                TileType::Floor => (rltk::to_cp437('.'), RGB::from_f32(0.5, 0.5, 0.5)),
+                TileType::Wall => (rltk::to_cp437('#'), RGB::from_f32(0., 1.0, 0.)),
+            };
+
+            if !map.visible_tiles[idx] {
+                fg = fg.to_greyscale();
             }
+            ctx.set(x, y, fg, RGB::from_f32(0., 0., 0.), glyph);
         }
 
         // move to cordinates
@@ -159,15 +149,17 @@ fn player_input(gs: &mut State, ctx: &mut Rltk) {
 
 fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
-    let mut player = ecs.write_storage::<Player>();
+    let mut players = ecs.write_storage::<Player>();
+    let mut viewsheds = ecs.write_storage::<Viewshed>();
     let map = ecs.fetch::<Map>();
 
     // 만약 Position과 Player를 모두 가진 엔티티가 있다면, for 구문을 실행합니다.
-    for (_player, pos) in (&mut player, &mut positions).join() {
+    for (_player, pos, viewshed) in (&mut players, &mut positions, &mut viewsheds).join() {
         let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
         if map.tiles[destination_idx] != TileType::Wall {
             pos.x = min(79, max(0, pos.x + delta_x));
             pos.y = min(49, max(0, pos.y + delta_y));
+            viewshed.dirty = true;
         }
     }
 }

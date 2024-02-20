@@ -15,6 +15,12 @@ impl<'a> System<'a> for VisibilitySystem {
     fn run(&mut self, data: Self::SystemData) {
         let (mut map, entities, mut viewshed, pos, player) = data;
         for (ent, viewshed, pos) in (&entities, &mut viewshed, &pos).join() {
+            if !viewshed.dirty {
+                continue;
+            } else {
+                viewshed.dirty = false;
+            }
+
             viewshed.visible_tiles.clear();
             viewshed.visible_tiles =
                 rltk::field_of_view(rltk::Point::new(pos.x, pos.y), viewshed.range, &(*map));
@@ -25,9 +31,13 @@ impl<'a> System<'a> for VisibilitySystem {
             // if this is the player, reveal what they can see
             let p = player.get(ent);
             if let Some(_p) = p {
+                for t in map.visible_tiles.iter_mut() {
+                    *t = false;
+                }
                 for vis in viewshed.visible_tiles.iter() {
                     let idx = map.xy_idx(vis.x, vis.y);
                     map.revealed_tiles[idx] = true;
+                    map.visible_tiles[idx] = true;
                 }
             }
         }
