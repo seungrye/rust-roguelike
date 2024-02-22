@@ -1,19 +1,23 @@
+use crate::{Map, Monster, Viewshed};
+use rltk::{console, Point};
 use specs::prelude::*;
-
-use crate::{Map, Monster, Position, Viewshed};
 
 pub struct MonsterAI {}
 impl<'a> System<'a> for MonsterAI {
     type SystemData = (
         WriteExpect<'a, Map>,
         Entities<'a>,
+        ReadExpect<'a, Point>,
         WriteStorage<'a, Viewshed>,
-        WriteStorage<'a, Position>,
         ReadStorage<'a, Monster>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut map, entities, mut viewshed, pos, monster) = data;
-        for (ent, viewshed, pos, monster) in (&entities, &viewshed, &pos, &monster).join() {}
+        let (mut _map, _entities, player_pos, viewshed, monster) = data;
+        for (viewshed, _monster) in (&viewshed, &monster).join() {
+            if viewshed.visible_tiles.contains(&*player_pos) {
+                console::log(format!("Monster shouts insults"));
+            }
+        }
     }
 }

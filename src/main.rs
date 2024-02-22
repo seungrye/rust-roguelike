@@ -1,14 +1,16 @@
 /// https://bfnightly.bracketproductions.com/chapter_4.html#making-a-couple-of-rectangular-rooms 작업중
-use rltk::{GameState, Rltk, VirtualKeyCode, RGB};
+use rltk::{GameState, Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 use specs_derive::Component;
-use std::cmp::{max, min};
 
 mod map;
 pub use map::*;
 
 mod rect;
 pub use rect::*;
+
+mod players;
+pub use players::*;
 
 mod components;
 pub use components::*;
@@ -74,9 +76,6 @@ struct Renderable {
     bg: RGB,
 }
 
-#[derive(Component, Debug)]
-pub struct Player {}
-
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
     let context = RltkBuilder::simple80x50()
@@ -96,14 +95,23 @@ fn main() -> rltk::BError {
     let map = Map::new_map_rooms_and_corridors();
     let (player_x, player_y) = map.rooms[0].center();
     let mut rng = rltk::RandomNumberGenerator::new();
-    for room in map.rooms.iter().skip(1) {
+    for (i, room) in map.rooms.iter().skip(1).enumerate() {
         let (x, y) = room.center();
 
         let roll = rng.roll_dice(1, 2);
-        let glyph = match roll {
-            1 => rltk::to_cp437('g'),
-            _ => rltk::to_cp437('o'),
+        let glyph: rltk::FontCharType;
+        let name: String;
+        match roll {
+            1 => {
+                glyph = rltk::to_cp437('g');
+                name = "Goblin".to_string();
+            }
+            _ => {
+                glyph = rltk::to_cp437('o');
+                name = "Orc".to_string()
+            }
         };
+
         gs.ecs
             .create_entity()
             .with(Position { x, y })
@@ -118,9 +126,13 @@ fn main() -> rltk::BError {
                 dirty: true,
             })
             .with(Monster {})
+            .with(Name {
+                name: format!("{} #{}", &name, i),
+            })
             .build();
     }
     gs.ecs.insert(map);
+    gs.ecs.insert(Point::new(player_x, player_y));
 
     gs.ecs
         .create_entity()
@@ -195,21 +207,4 @@ fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     }
 
     RunState::Running
-}
-
-fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
-    let mut positions = ecs.write_storage::<Position>();
-    let mut players = ecs.write_storage::<Player>();
-    let mut viewsheds = ecs.write_storage::<Viewshed>();
-    let map = ecs.fetch::<Map>();
-
-    // 만약 Position과 Player를 모두 가진 엔티티가 있다면, for 구문을 실행합니다.
-    for (_player, pos, viewshed) in (&mut players, &mut positions, &mut viewsheds).join() {
-        let destination_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
-        if map.tiles[destination_idx] != TileType::Wall {
-            pos.x = min(79, max(0, pos.x + delta_x));
-            pos.y = min(49, max(0, pos.y + delta_y));
-            viewshed.dirty = true;
-        }
-    }
 }
