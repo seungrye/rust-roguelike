@@ -91,6 +91,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Player>();
     gs.ecs.register::<Monster>();
+    gs.ecs.register::<Name>();
 
     let map = Map::new_map_rooms_and_corridors();
     let (player_x, player_y) = map.rooms[0].center();
@@ -116,7 +117,7 @@ fn main() -> rltk::BError {
             .create_entity()
             .with(Position { x, y })
             .with(Renderable {
-                glyph: glyph,
+                glyph,
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::BLACK),
             })
@@ -151,6 +152,9 @@ fn main() -> rltk::BError {
             dirty: true,
         })
         .with(Player {})
+        .with(Name {
+            name: "Player".to_string(),
+        })
         .build();
 
     rltk::main_loop(context, gs)
