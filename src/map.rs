@@ -1,6 +1,6 @@
 use std::cmp;
 
-use rltk::{Algorithm2D, BaseMap, RandomNumberGenerator};
+use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator};
 
 use super::Rect;
 
@@ -20,6 +20,15 @@ pub struct Map {
 }
 
 impl Map {
+    /// 파라메터로 받은 x, y 좌표가 지도 영엳을 벗어나지 않고, 벽이 아닌 위치인지 확인함.
+    fn is_exit_valid(&self, x: i32, y: i32) -> bool {
+        if x < 1 || x > self.width - 1 || y < 1 || y > self.height - 1 {
+            return false;
+        }
+        let idx = self.xy_idx(x, y);
+        self.tiles[idx] != TileType::Wall
+    }
+
     fn apply_vertical_tunnel(&mut self, y1: i32, y2: i32, x: i32) {
         for y in cmp::min(y1, y2)..=cmp::max(y1, y2) {
             let idx = self.xy_idx(x, y);
@@ -108,6 +117,36 @@ impl Algorithm2D for Map {
 }
 
 impl BaseMap for Map {
+    fn get_pathing_distance(&self, _idx1: usize, _idx2: usize) -> f32 {
+        let w = self.width as usize;
+        let p1 = Point::new(_idx1 % w, _idx1 / w);
+        let p2 = Point::new(_idx2 % w, _idx2 / w);
+        rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
+    }
+
+    fn get_available_exits(&self, idx: usize) -> rltk::SmallVec<[(usize, f32); 10]> {
+        let mut exists = rltk::SmallVec::new();
+        let x = idx as i32 % self.width;
+        let y = idx as i32 / self.width;
+        let w = self.width as usize;
+
+        // cardinal directions
+        if self.is_exit_valid(x - 1, y) {
+            exists.push((idx - 1, 1.0))
+        };
+        if self.is_exit_valid(x + 1, y) {
+            exists.push((idx + 1, 1.0))
+        };
+        if self.is_exit_valid(x, y - 1) {
+            exists.push((idx - w, 1.0))
+        };
+        if self.is_exit_valid(x, y + 1) {
+            exists.push((idx + w, 1.0))
+        };
+
+        exists
+    }
+
     fn is_opaque(&self, _idx: usize) -> bool {
         self.tiles[_idx] == TileType::Wall
     }
