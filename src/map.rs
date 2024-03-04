@@ -137,19 +137,33 @@ impl BaseMap for Map {
         let y = idx as i32 / self.width;
         let w = self.width as usize;
 
-        // cardinal directions
+        // cardinal directions (기본 방향)
         if self.is_exit_valid(x - 1, y) {
-            exists.push((idx - 1, 1.0))
-        };
+            exists.push((idx - 1, 1.0));
+        }
         if self.is_exit_valid(x + 1, y) {
-            exists.push((idx + 1, 1.0))
-        };
+            exists.push((idx + 1, 1.0));
+        }
         if self.is_exit_valid(x, y - 1) {
-            exists.push((idx - w, 1.0))
-        };
+            exists.push((idx - w, 1.0));
+        }
         if self.is_exit_valid(x, y + 1) {
-            exists.push((idx + w, 1.0))
-        };
+            exists.push((idx + w, 1.0));
+        }
+
+        // diagonal direction (대각 방향)
+        if self.is_exit_valid(x - 1, y - 1) {
+            exists.push((idx - w - 1, 1.45));
+        }
+        if self.is_exit_valid(x + 1, y - 1) {
+            exists.push((idx - w + 1, 1.45));
+        }
+        if self.is_exit_valid(x - 1, y + 1) {
+            exists.push((idx + w - 1, 1.45));
+        }
+        if self.is_exit_valid(x + 1, y + 1) {
+            exists.push((idx + w + 1, 1.45));
+        }
 
         exists
     }
