@@ -18,3 +18,11 @@ pub struct Name {
 
 #[derive(Component, Debug)]
 pub struct BlocksTile {}
+
+#[derive(Component, Debug)]
+pub struct CombatStats {
+    pub(crate) max_hp: i32,
+    pub(crate) hp: i32,
+    pub(crate) defense: i32,
+    pub(crate) power: i32,
+}
