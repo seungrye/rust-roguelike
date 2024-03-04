@@ -1,6 +1,7 @@
 use std::cmp;
 
 use rltk::{Algorithm2D, BaseMap, Point, RandomNumberGenerator};
+use specs::Entity;
 
 use super::Rect;
 
@@ -18,9 +19,16 @@ pub struct Map {
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
+    pub tile_content: Vec<Vec<Entity>>, // 타일에 있는 것(아이템, 적, NPC 등) 정보를 담고 있는 변수
 }
 
 impl Map {
+    /// 지도를 순회하면서, 타일에 있는 것(아이템, 적, NPC 등) 의 정보를 clear 처리
+    pub fn clear_content_index(&mut self) {
+        for content in self.tile_content.iter_mut() {
+            content.clear();
+        }
+    }
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter().enumerate() {
             self.blocked[i] = *tile == TileType::Wall;
@@ -66,6 +74,7 @@ impl Map {
             revealed_tiles: vec![false; 80 * 50],
             visible_tiles: vec![false; 80 * 50],
             blocked: vec![false; 80 * 50],
+            tile_content: vec![Vec::new(); 80 * 50],
         };
 
         const MAX_ROOMS: i32 = 30;
