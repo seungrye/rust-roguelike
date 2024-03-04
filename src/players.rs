@@ -1,4 +1,4 @@
-use crate::{Map, Position, TileType, Viewshed};
+use crate::{CombatStats, Map, Position, TileType, Viewshed};
 use rltk::Point;
 use specs::prelude::*;
 use specs_derive::Component;
@@ -11,6 +11,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
     let mut players = ecs.write_storage::<Player>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
+    let combat_stats = ecs.read_storage::<CombatStats>();
     let map = ecs.read_resource::<Map>();
     let mut ppos = ecs.write_resource::<Point>();
 
@@ -21,6 +22,18 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
             pos.x = min(79, max(0, pos.x + delta_x));
             pos.y = min(49, max(0, pos.y + delta_y));
             viewshed.dirty = true;
+        } else {
+            for potential_target in map.tile_content[destination_idx].iter() {
+                let target = combat_stats.get(*potential_target);
+                match target {
+                    Some(_) => {
+                        // attack it
+                        rltk::console::log(format!("From Hell's Heart, I stab thee!"));
+                        return;
+                    }
+                    _ => {}
+                }
+            }
         }
 
         ppos.x = pos.x;
