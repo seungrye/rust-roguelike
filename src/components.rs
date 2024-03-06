@@ -26,3 +26,8 @@ pub struct CombatStats {
     pub(crate) defense: i32,
     pub(crate) power: i32,
 }
+
+#[derive(Component, Clone, Debug)]
+pub struct WantsToMelee {
+    pub target: Entity,
+}

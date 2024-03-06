@@ -1,3 +1,5 @@
+use damage_system::{delete_the_dead, DamageSystem};
+use melee_combat_system::MeleeCombatSystem;
 /// https://bfnightly.bracketproductions.com/chapter_4.html#making-a-couple-of-rectangular-rooms 작업중
 use rltk::{GameState, Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -24,6 +26,13 @@ use monster_ai_system::MonsterAI;
 mod map_indexing_system;
 use map_indexing_system::MapIndexingSystem;
 
+mod suffer_damage;
+use suffer_damage::*;
+
+mod melee_combat_system;
+
+mod damage_system;
+
 #[derive(PartialEq, Clone, Copy)]
 enum RunState {
     Paused,
@@ -41,6 +50,10 @@ impl State {
         mob.run_now(&self.ecs);
         let mut mapindex = MapIndexingSystem {};
         mapindex.run_now(&self.ecs);
+        let mut melee = MeleeCombatSystem {};
+        melee.run_now(&self.ecs);
+        let mut damage = DamageSystem {};
+        damage.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -49,6 +62,7 @@ impl GameState for State {
         ctx.cls();
         if self.runstate == RunState::Running {
             self.run_systems();
+            delete_the_dead(&mut self.ecs);
             self.runstate = RunState::Paused;
         } else {
             self.runstate = player_input(self, ctx);
@@ -99,6 +113,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<CombatStats>();
+    gs.ecs.register::<SufferDamage>();
+    gs.ecs.register::<WantsToMelee>();
 
     let map = Map::new_map_rooms_and_corridors();
     let (player_x, player_y) = map.rooms[0].center();

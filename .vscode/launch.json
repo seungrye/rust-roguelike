@@ -5,9 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "VSDBG debug executable 'roguelike'",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/target/debug/roguelike.exe",
+            "args": [
+                //"no_launcher"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            // "preLaunchTask": "build hgs"
+        },
+        {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'roguelike'",
+            "name": "LLDB debug executable 'roguelike'",
             "cargo": {
                 "args": [
                     "build",
