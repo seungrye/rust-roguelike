@@ -35,12 +35,13 @@ mod damage_system;
 
 #[derive(PartialEq, Clone, Copy)]
 enum RunState {
-    Paused,
-    Running,
+    AwaitingInput,
+    PreRun,
+    PlayerTurn,
+    MonsterTurn,
 }
 struct State {
     ecs: World,
-    runstate: RunState,
 }
 impl State {
     fn run_systems(&mut self) {
@@ -60,19 +61,41 @@ impl State {
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
-        if self.runstate == RunState::Running {
-            self.run_systems();
-            delete_the_dead(&mut self.ecs);
-            self.runstate = RunState::Paused;
-        } else {
-            self.runstate = player_input(self, ctx);
+
+        // read from resource
+        let mut newrunstate = *self.ecs.read_resource::<RunState>();
+        match newrunstate {
+            RunState::PreRun => {
+                self.run_systems();
+                newrunstate = RunState::AwaitingInput;
+            }
+            RunState::AwaitingInput => {
+                newrunstate = player_input(self, ctx);
+            }
+            RunState::PlayerTurn => {
+                self.run_systems();
+                newrunstate = RunState::MonsterTurn;
+            }
+            RunState::MonsterTurn => {
+                self.run_systems();
+                newrunstate = RunState::PreRun;
+            }
         }
+
+        // update resource
+        {
+            let mut runwriter = self.ecs.write_resource::<RunState>();
+            *runwriter = newrunstate;
+        }
+
+        damage_system::delete_the_dead(&mut self.ecs);
 
         draw_map(&self.ecs, ctx);
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
         let map = self.ecs.read_resource::<Map>();
+
         for (pos, render) in (&positions, &renderables).join() {
             let idx = map.xy_idx(pos.x, pos.y);
             if map.revealed_tiles[idx] {
@@ -101,10 +124,7 @@ fn main() -> rltk::BError {
         .with_title("Roguelike Tutorial")
         .build()?;
 
-    let mut gs = State {
-        ecs: World::new(),
-        runstate: RunState::Running,
-    };
+    let mut gs = State { ecs: World::new() };
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Viewshed>();
@@ -164,6 +184,7 @@ fn main() -> rltk::BError {
     }
     gs.ecs.insert(map);
     gs.ecs.insert(Point::new(player_x, player_y));
+    gs.ecs.insert(RunState::PreRun);
 
     let player_entity = gs
         .ecs
