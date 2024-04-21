@@ -1,5 +1,5 @@
 use specs::prelude::*;
-use specs_derive::Component;
+use specs_derive::{Component, ConvertSaveload};
 
 #[derive(Component)]
 pub struct Viewshed {

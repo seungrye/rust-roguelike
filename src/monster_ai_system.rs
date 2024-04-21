@@ -1,4 +1,4 @@
-use crate::{Map, Monster, Name, Position, Viewshed, WantsToMelee};
+use crate::{Map, Monster, Name, Position, RunState, Viewshed, WantsToMelee};
 use rltk::{console, Point};
 use specs::prelude::*;
 
@@ -6,6 +6,7 @@ pub struct MonsterAI {}
 impl<'a> System<'a> for MonsterAI {
     type SystemData = (
         WriteExpect<'a, Map>,
+        ReadExpect<'a, RunState>,
         Entities<'a>,
         ReadExpect<'a, Point>,
         ReadExpect<'a, Entity>,
@@ -19,6 +20,7 @@ impl<'a> System<'a> for MonsterAI {
     fn run(&mut self, data: Self::SystemData) {
         let (
             mut map,
+            runstate,
             entities,
             player_pos,
             player_entity,
@@ -28,6 +30,10 @@ impl<'a> System<'a> for MonsterAI {
             mut position,
             mut wants_to_melee,
         ) = data;
+
+        if *runstate != RunState::MonsterTurn {
+            return;
+        }
 
         for (entity, viewshed, _monster, name, pos) in
             (&entities, &mut viewshared, &monster, &name, &mut position).join()
@@ -53,6 +59,7 @@ impl<'a> System<'a> for MonsterAI {
                         let mut idx = map.xy_idx(pos.x, pos.y);
                         map.blocked[idx] = false;
 
+                        // player 쪽으로 1칸 이동할 (step[0] 는 현재 좌표) 좌표 획득
                         pos.x = path.steps[1] as i32 % map.width;
                         pos.y = path.steps[1] as i32 / map.width;
 

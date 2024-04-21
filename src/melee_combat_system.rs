@@ -41,6 +41,6 @@ impl<'a> System<'a> for MeleeCombatSystem {
             }
         }
 
-        wants_to_melee.clear();
+        wants_to_melee.clear(); // ?? 매 턴마다 어디서 다시 insert 를 해 주지?
     }
 }
